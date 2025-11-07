@@ -20,10 +20,14 @@
             border-radius: 8px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.05);
         }
-        h1, h2 {
+        h1, h2, h3 {
             color: #005a9c;
             border-bottom: 2px solid #e0e0e0;
             padding-bottom: 8px;
+        }
+        h3 {
+            border-bottom: 1px solid #eee;
+            color: #333;
         }
         .container {
             display: grid;
@@ -72,6 +76,7 @@
             width: 100%;
             border-collapse: collapse;
             margin-top: 15px;
+            margin-bottom: 25px; /* Espacio entre tablas */
         }
         th, td {
             border: 1px solid #ddd;
@@ -257,31 +262,21 @@
             return z > 0 ? P : 1 - P;
         }
 
-        /**
-         * Busca el valor t crítico.
-         * gl: grados de libertad
-         * alpha_2_key: el valor de la columna (ej: "0.025")
-         */
         function getTValue(gl, alpha_2_key) {
             if (gl <= 20) {
                 if (tTable[gl] && tTable[gl][alpha_2_key]) {
                     return tTable[gl][alpha_2_key];
                 }
-                return null; // Alpha no está en la tabla
+                return null; 
             } else {
-                return null; // gl > 20
+                return null; 
             }
         }
         
-        /**
-         * Busca los valores dL y dU.
-         * Busca el n más cercano *hacia abajo* si no hay coincidencia exacta.
-         */
         function getDWValues(n) {
             if (dwTable_k1[n]) {
                 return dwTable_k1[n];
             }
-            // Buscar el n más cercano hacia abajo
             let closest_n = 0;
             for (const key in dwTable_k1) {
                 const n_key = parseInt(key);
@@ -292,7 +287,7 @@
             if (closest_n > 0) {
                 return dwTable_k1[closest_n];
             }
-            return null; // n es demasiado pequeño (menor a 15)
+            return null; 
         }
 
         // --- Función Principal de Cálculo ---
@@ -306,7 +301,7 @@
                 const y_data = parseInput(document.getElementById('data-y').value);
                 const alpha = parseFloat(document.getElementById('alpha').value);
                 const confianza = (1 - alpha) * 100;
-                const alpha_2_key = (alpha / 2).toString(); // Clave para la tabla t, ej: "0.025"
+                const alpha_2_key = (alpha / 2).toString(); 
 
                 if (x_data.length === 0 || y_data.length === 0) {
                     throw new Error("Por favor, ingresa datos para X e Y.");
@@ -327,18 +322,18 @@
                 let Sxx = 0;
                 let Syy = 0;
                 let Sxy = 0;
-                let sum_x_sq = 0; // Necesario para V(b0)
+                let sum_x_sq = 0; 
 
                 for (let i = 0; i < n; i++) {
-                    Sxx += Math.pow(x_data[i] - x_bar, 2); // [cite: 2]
-                    Syy += Math.pow(y_data[i] - y_bar, 2); // [cite: 2]
-                    Sxy += (x_data[i] - x_bar) * (y_data[i] - y_bar); // [cite: 2]
+                    Sxx += Math.pow(x_data[i] - x_bar, 2); 
+                    Syy += Math.pow(y_data[i] - y_bar, 2); 
+                    Sxy += (x_data[i] - x_bar) * (y_data[i] - y_bar); 
                     sum_x_sq += Math.pow(x_data[i], 2);
                 }
 
-                const beta_1 = Sxy / Sxx; // [cite: 2]
-                const beta_0 = y_bar - beta_1 * x_bar; // [cite: 4]
-                const r_xy = Sxy / Math.sqrt(Sxx * Syy); // [cite: 5]
+                const beta_1 = Sxy / Sxx; 
+                const beta_0 = y_bar - beta_1 * x_bar; 
+                const r_xy = Sxy / Math.sqrt(Sxx * Syy); 
                 const R_cuadrado_calc = Sxy * Sxy / (Sxx * Syy);
 
                 const y_hat = [];
@@ -353,15 +348,14 @@
                     y_hat.push(y_pred);
                     residuos.push(e_i);
                     
-                    SCE += Math.pow(e_i, 2); // [cite: 10]
+                    SCE += Math.pow(e_i, 2); 
                     SCR += Math.pow(y_pred - y_bar, 2);
                 }
 
-                const SCT = Syy; // [cite: 9]
-                const R_cuadrado_anova = SCR / SCT; // [cite: 3]
+                const SCT = Syy; 
                 
                 const df_err = n - 2;
-                const sigma_cuadrado = SCE / df_err; // [cite: 5] (s²)
+                const sigma_cuadrado = SCE / df_err; // (s²)
                 const s = Math.sqrt(sigma_cuadrado);
 
                 let resultsHTML = `
@@ -390,7 +384,7 @@ Error Estándar (s):       ${s.toFixed(4)}
                     </pre>
                 `;
 
-                // --- 2. Intervalos de Confianza (Fuente 6, 7, 8) ---
+                // --- 2. Intervalos de Confianza ---
                 
                 const gl = n - 2;
                 const t_critico = getTValue(gl, alpha_2_key);
@@ -399,14 +393,14 @@ Error Estándar (s):       ${s.toFixed(4)}
 
                 if (t_critico) {
                     // IC para β₁
-                    const V_beta_1 = sigma_cuadrado / Sxx; // [cite: 3]
+                    const V_beta_1 = sigma_cuadrado / Sxx; 
                     const SE_beta_1 = Math.sqrt(V_beta_1);
                     const margin_error_b1 = t_critico * SE_beta_1;
                     const b1_lower = beta_1 - margin_error_b1;
                     const b1_upper = beta_1 + margin_error_b1;
 
                     // IC para β₀
-                    const V_beta_0 = (sigma_cuadrado * sum_x_sq) / (n * Sxx); // [cite: 5]
+                    const V_beta_0 = (sigma_cuadrado * sum_x_sq) / (n * Sxx); 
                     const SE_beta_0 = Math.sqrt(V_beta_0);
                     const margin_error_b0 = t_critico * SE_beta_0;
                     const b0_lower = beta_0 - margin_error_b0;
@@ -437,13 +431,13 @@ Intervalo de Confianza para β₀ (Intercepto):
                 }
 
 
-                // --- 3. Tabla ANOVA (Fuente 11, 12, 13) ---
+                // --- 3. Tabla ANOVA ---
 
                 const df_reg = 1;
                 const df_tot = n - 1;
                 const MSR = SCR / df_reg; 
                 const MSE = SCE / df_err; 
-                const F_calc = MSR / MSE; // [cite: 12]
+                const F_calc = MSR / MSE; 
 
                 resultsHTML += `
                     <h2>Prueba ANOVA</h2>
@@ -484,17 +478,17 @@ Intervalo de Confianza para β₀ (Intercepto):
                     <div class="nota">
                         <b>Interpretación ANOVA:</b>
                         <br>Se debe comparar el <b>F Calculado (${F_calc.toFixed(4)})</b> con un valor crítico <b>F(1-α, 1, n-2)</b>.
-                        <br>El PDF proporciona una tabla F para <b>α=0.05</b>[cite: 219]. Si F Calculado > F Crítico(α=0.05), se rechaza H₀ con ese nivel de significancia.
+                        <br>El PDF proporciona una tabla F para <b>α=0.05</b>. Si F Calculado > F Crítico(α=0.05), se rechaza H₀ con ese nivel de significancia.
                     </div>
                 `;
 
-                // --- 4. Test Durbin-Watson (Fuente 25, 26, 27) ---
+                // --- 4. Test Durbin-Watson ---
 
                 let sum_diff_e_sq = 0;
                 for (let i = 1; i < n; i++) {
                     sum_diff_e_sq += Math.pow(residuos[i] - residuos[i-1], 2);
                 }
-                const D_calc = sum_diff_e_sq / SCE; // [cite: 26]
+                const D_calc = sum_diff_e_sq / SCE; 
 
                 const dw_values = getDWValues(n);
                 let dw_conclusion = "";
@@ -504,11 +498,11 @@ Intervalo de Confianza para β₀ (Intercepto):
                     const { dL, dU } = dw_values;
                     dw_criticals = `(Valores críticos para n=${n}, k'=1: dL=${dL}, dU=${dU})`;
 
-                    if (D_calc < dL) { // [cite: 17]
+                    if (D_calc < dL) { 
                         dw_conclusion = `<b>Conclusión: Se rechaza H₀.</b> Existe evidencia de autocorrelación positiva.`;
-                    } else if (D_calc > dU) { // [cite: 26]
+                    } else if (D_calc > dU) { 
                         dw_conclusion = `<b>Conclusión: No se rechaza H₀.</b> No hay evidencia de autocorrelación.`;
-                    } else { // [cite: 27]
+                    } else { 
                         dw_conclusion = `<b>Conclusión: Prueba no concluyente.</b>`;
                     }
                 } else {
@@ -526,9 +520,9 @@ ${dw_criticals}
                     <div class="nota">
                         <b>Interpretación Durbin-Watson:</b>
                         <br>Reglas (para H₁: ρ > 0):
-                        <br>  - Si D < dL (${dw_values ? dw_values.dL : 'N/A'}): Se rechaza H₀ [cite: 17]
-                        <br>  - Si D > dU (${dw_values ? dw_values.dU : 'N/A'}): No se rechaza H₀ [cite: 26]
-                        <br>  - Si dL ≤ D ≤ dU: Test no concluyente [cite: 27]
+                        <br>  - Si D < dL (${dw_values ? dw_values.dL : 'N/A'}): Se rechaza H₀
+                        <br>  - Si D > dU (${dw_values ? dw_values.dU : 'N/A'}): No se rechaza H₀
+                        <br>  - Si dL ≤ D ≤ dU: Test no concluyente
                         <br>
                         <br><b>${dw_conclusion}</b>
                     </div>
@@ -536,18 +530,21 @@ ${dw_criticals}
 
                 // --- 5. Test Kolmogorov-Smirnov (Normalidad de Residuos) ---
                 
+                // --- 5a. Tabla K-S (Cálculo Completo) ---
                 const z_residuos = residuos.map(e => e / s).sort((a, b) => a - b);
                 
                 let Dn_max = 0;
                 let ks_table = `
-                    <h3>Tabla de Desarrollo Kolmogorov-Smirnov</h3>
+                    <h3>Tabla de Desarrollo K-S (Cálculo Completo)</h3>
+                    <p>Esta tabla calcula el estadístico Dₙ correctamente, comparando Fₛ con Sₙ(i/n) y Sₙ((i-1)/n).</p>
                     <table>
                         <thead>
                             <tr>
                                 <th>i</th>
                                 <th>Residuo Estandarizado (Zᵢ)</th>
-                                <th>F Teórica Fₛ(Zᵢ) = Φ(Zᵢ)</th>
+                                <th>F Teórica Fₛ(Zᵢ)</th>
                                 <th>F Empírica Sₙ(i/n)</th>
+                                <th>F Empírica Sₙ((i-1)/n)</th>
                                 <th>|Fₛ(Zᵢ) - Sₙ(i/n)|</th>
                                 <th>|Fₛ(Zᵢ) - Sₙ((i-1)/n)|</th>
                             </tr>
@@ -573,6 +570,7 @@ ${dw_criticals}
                             <td>${z_i.toFixed(4)}</td>
                             <td>${Fs_zi.toFixed(4)}</td>
                             <td>${Sn_i.toFixed(4)}</td>
+                            <td>${Sn_i_1.toFixed(4)}</td>
                             <td>${diff1.toFixed(4)}</td>
                             <td>${diff2.toFixed(4)}</td>
                         </tr>
@@ -580,34 +578,81 @@ ${dw_criticals}
                 }
                 
                 ks_table += `</tbody></table>`;
-
-                const ks_crit_table = { 10: 0.41, 15: 0.34, 20: 0.29 }; // [cite: 30]
                 
-                let Dn_critico = 1.36 / Math.sqrt(n); // Para n > 50 [cite: 30]
+                // --- 5b. Tabla K-S (Formato Imagen) ---
+                
+                // 1. Sort original residuals
+                const e_sorted = [...residuos].sort((a, b) => a - b);
+                
+                let ks_table_image = `
+                    <h3>Tabla de Desarrollo K-S (Formato Imagen)</h3>
+                    <p>Esta tabla sigue el formato de la imagen. La columna 'Datos' son los residuos originales ordenados (eᵢ).</p>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Datos (eᵢ)</th>
+                                <th>Orden (i)</th>
+                                <th>Sn (i/n)</th>
+                                <th>Z (eᵢ/s)</th>
+                                <th>F(zᵢ)</th>
+                                <th>|D| = |F(zᵢ) - Sn|</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+
+                for (let i = 0; i < n; i++) {
+                    const e_i = e_sorted[i];
+                    const orden = i + 1;
+                    const Sn_i = orden / n;
+                    const z_i = e_i / s; // Estandarizar el residuo ordenado
+                    const Fs_zi = normalCDF(z_i);
+                    const D_abs = Math.abs(Fs_zi - Sn_i);
+                    
+                    ks_table_image += `
+                        <tr>
+                            <td>${e_i.toFixed(2)}</td>
+                            <td>${orden}</td>
+                            <td>${Sn_i.toFixed(2)}</td>
+                            <td>${z_i.toFixed(2)}</td>
+                            <td>${Fs_zi.toFixed(2)}</td>
+                            <td>${D_abs.toFixed(2)}</td>
+                        </tr>
+                    `;
+                }
+                
+                ks_table_image += `</tbody></table>`;
+                
+
+                // --- 5c. Conclusión K-S ---
+                const ks_crit_table = { 10: 0.41, 15: 0.34, 20: 0.29 }; 
+                
+                let Dn_critico = 1.36 / Math.sqrt(n); // Para n > 50
                 if (n <= 10) Dn_critico = 0.41;
                 else if (n <= 15) Dn_critico = 0.34;
                 else if (n <= 20) Dn_critico = 0.29;
                 else if (n <= 50) Dn_critico = 1.36 / Math.sqrt(n); 
                 
                 const conclusion_ks = (Dn_max > Dn_critico) ? 
-                    `<b>Se rechaza H₀</b> (Los residuos NO siguen una distribución normal).` : // [cite: 29]
+                    `<b>Se rechaza H₀</b> (Los residuos NO siguen una distribución normal).` : 
                     `<b>No se rechaza H₀</b> (Los residuos parecen seguir una distribución normal).`;
 
                 resultsHTML += `
                     <h2>Prueba Kolmogorov-Smirnov (Normalidad, α=0.05)</h2>
-                    <p>Prueba si los residuos estandarizados siguen una distribución normal (H₀: F(x) = Fₛ(x))[cite: 19].</p>
+                    <p>Prueba si los residuos estandarizados siguen una distribución normal (H₀: F(x) = Fₛ(x)).</p>
                     <pre>
-Estadístico Dₙ Calculado: <b>${Dn_max.toFixed(4)}</b>  (Dₙ = max|Fₛ(x) - Sₙ(x)|) [cite: 18]
-Valor Crítico Dₙ(α=0.05) para n=${n}: <b>${Dn_critico.toFixed(4)}</b> (Basado en tabla [cite: 30])
+Estadístico Dₙ Calculado: <b>${Dn_max.toFixed(4)}</b>  (Dₙ = max|Fₛ(x) - Sₙ(x)|)
+Valor Crítico Dₙ(α=0.05) para n=${n}: <b>${Dn_critico.toFixed(4)}</b> (Basado en tabla)
                     </pre>
                     <div class="nota">
                         <b>Interpretación K-S (α=0.05):</b>
                         <br>Comparamos Dₙ Calculado (${Dn_max.toFixed(4)}) con Dₙ Crítico (${Dn_critico.toFixed(4)}).
-                        <br>Si Dₙ > Dₙ(α), se rechaza H₀[cite: 29].
+                        <br>Si Dₙ > Dₙ(α), se rechaza H₀.
                         <br>
                         <br><b>${conclusion_ks}</b>
                     </div>
                     ${ks_table}
+                    ${ks_table_image}
                 `;
 
                 output.innerHTML = resultsHTML;
