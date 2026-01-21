@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Resumidoor de Reuniones</title>
+    <title>v5 Resumidor de Reuniones</title>
     <style>
         body { font-family: sans-serif; max-width: 800px; margin: 2rem auto; padding: 0 1rem; }
         button { padding: 10px 20px; font-size: 16px; cursor: pointer; }
@@ -30,7 +30,7 @@
         let mediaRecorder;
         let audioChunks = [];
         // IMPORTANTE: Cambia esto por la URL que te dio Ngrok
-        const API_URL = "https://joi-excludable-ulises.ngrok-free.dev"; 
+        const API_URL = "https://joi-excludable-ulises.ngrok-free.dev/procesar-reunion"; 
 
         document.getElementById("btnRecord").onclick = async () => {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
