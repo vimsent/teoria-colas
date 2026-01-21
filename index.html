@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>v6 Resumidor de Reuniones</title>
+    <title>v7 Resumidor de Reuniones</title>
     <style>
         body { font-family: sans-serif; max-width: 800px; margin: 2rem auto; padding: 0 1rem; }
         button { padding: 10px 20px; font-size: 16px; cursor: pointer; }
@@ -14,6 +14,11 @@
     <h1>Resumidor de Reuniones (DeepSeek R1)</h1>
     
     <button id="btnRecord">Ω - Registrar</button>
+    <hr style="margin: 2rem 0; border: 0; border-top: 1px solid #ddd;">
+
+    <h3>O subir un archivo (MP3, WAV, M4A):</h3>
+    <input type="file" id="fileInput" accept="audio/*">
+    <button id="btnUpload">Subir y Procesar</button>
     <button id="btnStop" disabled>Θ - Detener y Procesar</button>
     
     <div id="status">Esperando acción...</div>
@@ -75,6 +80,55 @@
             mediaRecorder.stop();
             document.getElementById("btnRecord").disabled = false;
             document.getElementById("btnStop").disabled = true;
+        };
+        document.getElementById("btnUpload").onclick = async () => {
+            const fileInput = document.getElementById("fileInput");
+            
+            // 1. Validar que haya archivo seleccionado
+            if (fileInput.files.length === 0) {
+                alert("Por favor selecciona un archivo de audio primero.");
+                return;
+            }
+
+            const file = fileInput.files[0];
+            const statusDiv = document.getElementById("status");
+            
+            // 2. Preparar UI
+            statusDiv.innerText = "Subiendo y procesando archivo... (Paciencia)";
+            document.getElementById("btnRecord").disabled = true;
+            document.getElementById("btnUpload").disabled = true;
+            document.getElementById("results").style.display = "none";
+
+            // 3. Crear el paquete de datos (FormData) igual que en la grabación
+            const formData = new FormData();
+            formData.append("file", file); // 'file' debe coincidir con el backend
+
+            try {
+                // 4. Enviar al mismo endpoint que usas para grabar
+                const response = await fetch(API_URL, {
+                    method: "POST",
+                    headers: {
+                        "ngrok-skip-browser-warning": "true"
+                    },
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                // 5. Mostrar resultados
+                statusDiv.innerText = "¡Procesamiento completado!";
+                document.getElementById("results").style.display = "block";
+                document.getElementById("summaryText").innerText = data.summary;
+                document.getElementById("transcriptionText").innerText = data.transcription;
+
+            } catch (error) {
+                statusDiv.innerText = "Error al subir archivo: " + error;
+                console.error(error);
+            } finally {
+                // Reactivar botones
+                document.getElementById("btnRecord").disabled = false;
+                document.getElementById("btnUpload").disabled = false;
+            }
         };
     </script>
 </body>
